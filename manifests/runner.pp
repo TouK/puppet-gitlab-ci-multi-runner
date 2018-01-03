@@ -189,7 +189,6 @@
 #  }
 #;
 
-
 define gitlab_ci_multi_runner::runner (
     $user = 'gitlab_ci_multi_runner',
 
@@ -231,6 +230,7 @@ define gitlab_ci_multi_runner::runner (
     # Cache Options                                        #
     # Used by Docker to send cache to S3                   #
     ########################################################
+
     $cache_type = undef,
     $cache_s3_server_address = undef,
     $cache_s3_access_key = undef,
@@ -335,7 +335,6 @@ define gitlab_ci_multi_runner::runner (
     if $cache_dir{
       $cache_dir_opt = "--cache-dir=${cache_dir}"
     }
-
 
     # I group like arguments together so my final opstring won't be so giant.
     $runner_opts = "${gitlab_ci_url_opt} ${node_description_opt} ${tags_opt} ${locked_opt} ${token_opt} ${env_opts} ${run_untagged_opt} ${cache_dir_opt} "
@@ -551,7 +550,7 @@ define gitlab_ci_multi_runner::runner (
     notify{"Will run gitlab-ci-multi-runner register --non-interactive ${opts}": }
 
     # Register a new runner - this is where the magic happens.
-    # Only if the fig.toml file doesn't already contain an entry.
+    # Only if the config.toml file doesn't already contain an entry.
     # --non-interactive means it won't ask us for things, it'll just fail out.
     exec { "Register-${node_description}-${gitlab_ci_url}":
         command  => "gitlab-ci-multi-runner register --non-interactive ${opts}",
