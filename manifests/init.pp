@@ -128,39 +128,45 @@ class gitlab_ci_multi_runner (
         user     => root,
         provider => shell,
         creates  => $repo_location,
-    } ->
-    if $package_type == 'deb' {file { '/etc/apt/preferences.d/pin-gitlab-runner.pref':
+    }
+    if ($package_type == 'deb') {file { '/etc/apt/preferences.d/pin-gitlab-runner.pref':
       ensure  => 'present',
       mode    => '0644',
       content => 'Explanation: Prefer GitLab provided packages over the Debian native ones
 Package: gitlab-runner
 Pin: origin packages.gitlab.com
 Pin-Priority: 1001',
-    } } ->
+      require => Exec['Add Repository']
+    } }
     # Install the package after the repo has been added.
     package { 'gitlab-runner':
-        ensure => $theVersion,
-    } ->
+        ensure  => $theVersion,
+        require => Exec['Add Repository']
+    }
     exec { 'Uninstall Misconfigured Service':
         command  => "service ${service} stop; ${service} uninstall",
         user     => root,
         provider => shell,
         unless   => "grep '${toml_file}' ${service_file}",
-    } ->
+        require  => Package['gitlab-runner']
+    }
     exec { 'Ensure Service':
         command  => "${service} install --user ${user} --config ${toml_file} --working-directory ${home_path} ",
         user     => root,
         provider => shell,
         creates  => $service_file,
-    } ->
+        require  => Exec['Uninstall Misconfigured Service']
+    }
     file { 'Ensure .gitlab-runner directory is owned by correct user':
         path    => $toml_path,
         owner   => $user,
         recurse => true,
-    } ->
+        require => Exec['Ensure Service']
+    }
     # Ensure that the service is running at all times.
     service { $service:
-        ensure => 'running',
+        ensure  => 'running',
+        require => File['Ensure .gitlab-runner directory is owned by correct user']
     }
 
     # Stop the package being updated where a specific version is specified
